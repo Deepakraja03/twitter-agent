@@ -1,0 +1,45 @@
+{
+  "name": "alith-twitter-agent",
+  "version": "1.0.0",
+  "description": "Twitter Agent using Alith SDK with Groq integration",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "interactive": "npm run build && node dist/main.js",
+    "tweet": "npm run build && node dist/single-tweet.js",
+    "lazai": "npm run build && node dist/lazai-tweet.js",
+    "test": "npm run build && node dist/test.js",
+    "test-tweets": "npm run build && node dist/test-tweets.js",
+    "test-mentions": "npm run build && node dist/test-mention-cleaning.js",
+    "setup": "node setup.js",
+    "alith": "npm run build && node dist/index.js"
+  },
+  "keywords": [
+    "alith",
+    "twitter",
+    "agent",
+    "groq",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@types/json-schema": "^7.0.15",
+    "@types/node": "^24.3.0",
+    "alith": "^0.12.1",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.0",
+    "groq-sdk": "^0.3.0",
+    "node-cron": "^3.0.3",
+    "ts-node": "^10.9.2",
+    "twitter-api-v2": "^1.15.0",
+    "typescript": "^5.9.2"
+  },
+  "devDependencies": {
+    "@types/node-cron": "^3.0.11",
+    "nodemon": "^3.1.10"
+  }
+}

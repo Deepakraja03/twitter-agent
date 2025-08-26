@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "agent-twitter-client-mcp": {
+      "command": "npx",
+      "args": ["-y", "agent-twitter-client-mcp"],
+      "env": {
+        "AUTH_METHOD": "cookies",
+        "TWITTER_COOKIES": "[\"auth_token=65d70a21287b422fdc31ed93a986394f63af2170; Domain=.twitter.com\", \"ct0=e057773a64719df5cae5d1384536f7f39eaf3ef69828ffddc4c84ed68f7923dda0d5b914c4f5081b43317c28a269c89c7e87e1679f77f51f0ed25785aa8e6cfe758aa9e568231b290cddd8c612f18498; Domain=.twitter.com\", \"twid=DeepakRaja2003; Domain=.twitter.com\"]"
+      }
+    }
+  }
+}
