@@ -2,11 +2,23 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import { TwitterApi } from 'twitter-api-v2';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 8000;
+
+// Simple in-memory cache for analytics to reduce upstream calls and avoid 429s
+const ANALYTICS_TTL_MS = Number(process.env.ANALYTICS_TTL_MS ?? 60_000);
+
+type AnalyticsPayload = {
+  success: true;
+  metrics: any;
+  recentActivity: any;
+};
+
+const analyticsCache = new Map<string, { payload: AnalyticsPayload; expiresAt: number }>();
 
 // CORS & JSON
 app.use(cors({
@@ -57,22 +69,130 @@ app.post('/api/tweets/post', (req: Request, res: Response) => {
   });
 });
 
-// Analytics overview (stubbed)
-app.get('/api/analytics/overview', (_req: Request, res: Response) => {
-  const metrics = {
-    totalFollowers: (12847).toLocaleString(),
-    followingCount: (321).toLocaleString(),
-    engagementRate: '2.3%',
-    postsThisWeek: 7,
-    avgResponseTime: '2.4h',
-  };
-  const recentActivity = Array.from({ length: 5 }).map((_, i) => ({
-    id: `${Date.now()}-${i}`,
-    content: `Recent tweet #${i + 1} - example analytics content`,
-    timestamp: new Date(Date.now() - i * 3600_000).toISOString(),
-    engagement: Math.floor(Math.random() * 200),
-  }));
-  res.json({ success: true, metrics, recentActivity });
+// Analytics overview (Twitter live using user access token)
+app.get('/api/analytics/overview', async (req: Request, res: Response) => {
+  let cacheKey = '';
+  try {
+    const auth = req.headers.authorization || '';
+    const bearer = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+    const token = (req.query.accessToken as string) || bearer;
+
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'Twitter access token required' });
+    }
+
+    // Cache lookup before making upstream calls
+    cacheKey = token;
+    const cached = analyticsCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      res.set('x-cache', 'HIT');
+      return res.json(cached.payload);
+    }
+
+    const client = new TwitterApi(token);
+
+    // Get current user profile
+    const me = await client.v2.me({ 'user.fields': ['public_metrics', 'created_at', 'description', 'verified'] });
+    const user = me.data;
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const userId = user.id;
+    const followers = user.public_metrics?.followers_count || 0;
+    const following = user.public_metrics?.following_count || 0;
+
+    // Fetch recent tweets
+    const timeline = await client.v2.userTimeline(userId, {
+      max_results: 20,
+      'tweet.fields': ['created_at', 'public_metrics'],
+      exclude: ['replies', 'retweets'] as any,
+    });
+
+    const tweets = timeline.tweets || [];
+
+    // Compute metrics
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    let postsThisWeek = 0;
+    let totalLikes = 0;
+    let totalRetweets = 0;
+    let totalReplies = 0;
+
+    const recentActivity = tweets.slice(0, 5).map((t) => {
+      const likes = t.public_metrics?.like_count || 0;
+      const rts = t.public_metrics?.retweet_count || 0;
+      const replies = t.public_metrics?.reply_count || 0;
+      totalLikes += likes;
+      totalRetweets += rts;
+      totalReplies += replies;
+      const created = t.created_at ? new Date(t.created_at) : new Date();
+      if (created >= oneWeekAgo && created <= now) postsThisWeek += 1;
+      return {
+        id: t.id,
+        content: t.text || '',
+        timestamp: t.created_at || new Date().toISOString(),
+        engagement: likes + rts + replies,
+      };
+    });
+
+    const totalEngagements = totalLikes + totalRetweets + totalReplies;
+    const engagementRate = tweets.length > 0 ? `${((totalEngagements / tweets.length) || 0).toFixed(1)}%` : '0.0%';
+
+    const metrics = {
+      totalFollowers: followers.toLocaleString(),
+      followingCount: following.toLocaleString(),
+      engagementRate,
+      postsThisWeek,
+      avgResponseTime: '—', // Not computed here
+    };
+
+    const payload: AnalyticsPayload = { success: true, metrics, recentActivity };
+    analyticsCache.set(cacheKey, { payload, expiresAt: Date.now() + ANALYTICS_TTL_MS });
+    res.set('x-cache', cached ? 'REFRESH' : 'MISS');
+    return res.json(payload);
+  } catch (err: any) {
+    // Preserve upstream HTTP status when available (e.g., 401, 429) instead of always returning 500
+    let status = 500;
+    const codeNum = typeof err?.code === 'number' ? err.code : undefined;
+    const statusNum = typeof err?.status === 'number' ? err.status : undefined;
+
+    if (typeof statusNum === 'number') {
+      status = statusNum;
+    } else if (typeof codeNum === 'number' && codeNum >= 400 && codeNum < 600) {
+      status = codeNum;
+    }
+
+    // If rate limited by Twitter, include Retry-After header and basic rate limit info if present
+    if (status === 429 && err?.rateLimit) {
+      const nowSec = Math.floor(Date.now() / 1000);
+      const resetSec = Number(err.rateLimit.reset) || 0;
+      const retryAfter = resetSec > nowSec ? resetSec - nowSec : 60;
+      res.set('Retry-After', String(retryAfter));
+    }
+
+    // Serve stale cache on 429 to avoid breaking UX
+    if (status === 429 && cacheKey) {
+      const stale = analyticsCache.get(cacheKey);
+      if (stale) {
+        res.set('x-cache', 'STALE');
+        res.set('x-upstream-status', '429');
+        return res.status(200).json(stale.payload);
+      }
+    }
+
+    const payload: any = { success: false, error: err?.message || 'Failed to fetch analytics' };
+    if (status === 429 && err?.rateLimit) {
+      payload.rateLimit = {
+        limit: err.rateLimit.limit,
+        remaining: err.rateLimit.remaining,
+        reset: err.rateLimit.reset,
+      };
+    }
+
+    return res.status(status).json(payload);
+  }
 });
 
 // Analytics detailed (stubbed)

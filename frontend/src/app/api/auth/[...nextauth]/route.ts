@@ -10,26 +10,45 @@ const handler = NextAuth({
     })
   ],
   callbacks: {
+    async signIn({ user, account, profile, email, credentials }) {
+      if (process.env.NODE_ENV !== 'production') {
+        // eslint-disable-next-line no-console
+        console.log('[next-auth][debug][OAUTH_CALLBACK_RESPONSE]', {
+          profile,
+          account,
+          OAuthProfile: profile,
+        })
+      }
+      return true
+    },
     async redirect({ url, baseUrl }) {
-      // Redirect to dashboard after successful sign in
       if (url === baseUrl) return `${baseUrl}/dashboard`
-      // Allows relative callback URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`
-      // Allows callback URLs on the same origin
       else if (new URL(url).origin === baseUrl) return url
       return `${baseUrl}/dashboard`
     },
     async session({ session, token }) {
-      // Add access token to session if needed
       if (token.accessToken) {
-        session.accessToken = token.accessToken as string
+        (session as any).accessToken = token.accessToken as string
+      }
+      if ((token as any).username) {
+        (session as any).username = (token as any).username as string
+        ;(session.user as any).username = (token as any).username as string
       }
       return session
     },
-    async jwt({ token, account }) {
+    async jwt({ token, account, profile }) {
+      if (process.env.NODE_ENV !== 'production' && (account || profile)) {
+        // eslint-disable-next-line no-console
+        console.log('[next-auth][debug][JWT_CALLBACK_INPUT]', { account, profile })
+      }
       if (account) {
-        token.accessToken = account.access_token
-        token.refreshToken = account.refresh_token
+        token.accessToken = (account as any).access_token
+        ;(token as any).refreshToken = (account as any).refresh_token
+      }
+      if (profile) {
+        const p: any = profile
+        ;(token as any).username = p?.data?.username || p?.username || (p as any)?.screen_name
       }
       return token
     }

@@ -1,12 +1,15 @@
 'use client'
 
-import { signIn, getProviders } from "next-auth/react"
+import { signIn, getProviders, useSession } from "next-auth/react"
 import { useEffect, useState } from "react"
 import { Twitter, Bot, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function SignIn() {
   const [providers, setProviders] = useState<any>(null)
+  const { data: session, status } = useSession()
+  const router = useRouter()
 
   useEffect(() => {
     const setAuthProviders = async () => {
@@ -15,6 +18,12 @@ export default function SignIn() {
     }
     setAuthProviders()
   }, [])
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace('/dashboard')
+    }
+  }, [status, router])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">

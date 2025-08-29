@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { analyticsApi } from '@/lib/api'
+import { useSession } from 'next-auth/react'
 import { 
   TrendingUp, 
   Users, 
@@ -14,8 +16,10 @@ import {
   Twitter,
   ArrowUpRight,
   ArrowDownRight,
-  Activity
+  Activity,
+  UserPlus
 } from 'lucide-react'
+import type { Session } from 'next-auth'
 
 interface MetricCardProps {
   title: string
@@ -24,6 +28,9 @@ interface MetricCardProps {
   changeType: 'positive' | 'negative' | 'neutral'
   icon: React.ElementType
 }
+
+// Session type helper to access optional accessToken without using any
+type SessionWithAccessToken = Session & { accessToken?: string }
 
 function MetricCard({ title, value, change, changeType, icon: Icon }: MetricCardProps) {
   const changeColor = {
@@ -251,20 +258,33 @@ function QuickActions() {
 
 export function DashboardOverview() {
   const [isLoading, setIsLoading] = useState(true)
+  const [metrics, setMetrics] = useState<{ totalFollowers: string; followingCount: string; engagementRate: string; postsThisWeek: number; avgResponseTime: string } | null>(null)
+  const { data: session } = useSession()
 
   useEffect(() => {
-    // Simulate loading data
-    const timer = setTimeout(() => setIsLoading(false), 1000)
-    return () => clearTimeout(timer)
-  }, [])
+    let mounted = true
+    ;(async () => {
+      try {
+        const accessToken = (session as SessionWithAccessToken | null | undefined)?.accessToken
+        const res = await analyticsApi.overview(accessToken)
+        if (mounted) {
+          setMetrics(res.metrics)
+          setIsLoading(false)
+        }
+      } catch (e) {
+        if (mounted) setIsLoading(false)
+      }
+    })()
+    return () => { mounted = false }
+  }, [session])
 
   if (isLoading) {
     return (
       <div className="p-6 lg:p-8">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {[...Array(4)].map((_, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            {[...Array(5)].map((_, i) => (
               <div key={i} className="bg-gray-200 h-32 rounded-xl"></div>
             ))}
           </div>
@@ -282,36 +302,43 @@ export function DashboardOverview() {
     <div className="p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
-        <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your Twitter presence.</p>
+        <h1 className="text-2xl font-bold text-white">Dashboard Overview</h1>
+        <p className="x-muted mt-1">Welcome back! Here&apos;s what&apos;s happening with your Twitter presence.</p>
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <MetricCard
           title="Total Followers"
-          value="12,847"
+          value={metrics?.totalFollowers || '0'}
           change="+12.5%"
           changeType="positive"
           icon={Users}
         />
         <MetricCard
+          title="Following"
+          value={metrics?.followingCount || '0'}
+          change="+0.0%"
+          changeType="neutral"
+          icon={UserPlus}
+        />
+        <MetricCard
           title="Engagement Rate"
-          value="4.2%"
+          value={metrics?.engagementRate || '0%'}
           change="+0.8%"
           changeType="positive"
           icon={Heart}
         />
         <MetricCard
           title="Posts This Week"
-          value="23"
+          value={String(metrics?.postsThisWeek ?? 0)}
           change="+15.0%"
           changeType="positive"
           icon={Twitter}
         />
         <MetricCard
           title="Avg. Response Time"
-          value="2.4h"
+          value={metrics?.avgResponseTime || '0h'}
           change="-0.6h"
           changeType="positive"
           icon={Clock}
