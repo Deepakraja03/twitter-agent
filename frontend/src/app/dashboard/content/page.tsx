@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { PenTool, Sparkles, Twitter, Hash, Image, Calendar, Send } from 'lucide-react'
+import { contentApi, tweetApi, ApiError } from '@/lib/api'
 
 export default function ContentPage() {
   const [prompt, setPrompt] = useState('')
@@ -40,23 +41,34 @@ export default function ContentPage() {
     { id: 'educational', name: 'Educational' }
   ]
 
+  const handlePost = async () => {
+    if (!generatedContent) return
+    try {
+      const res = await tweetApi.post(generatedContent)
+      alert(`Posted! Link: ${res.url}`)
+    } catch (e) {
+      const err = e as ApiError
+      alert(`Failed to post: ${err.message}`)
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="p-6 lg:p-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Content Generator</h1>
-          <p className="text-gray-600 mt-1">Create engaging tweets with AI assistance</p>
+          <h1 className="text-2xl font-bold text-white">Content Generator</h1>
+          <p className="x-muted mt-1">Create engaging tweets with AI assistance</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Input Section */}
           <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Content Settings</h2>
+            <div className="x-card p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-white mb-4">Content Settings</h2>
               
               {/* Content Type */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
+                <label className="block text-sm font-medium text-white mb-2">Content Type</label>
                 <div className="grid grid-cols-3 gap-2">
                   {contentTypes.map((type) => (
                     <button
@@ -64,8 +76,8 @@ export default function ContentPage() {
                       onClick={() => setContentType(type.id)}
                       className={`p-3 rounded-lg border text-sm font-medium transition-colors ${
                         contentType === type.id
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                          ? 'border-zinc-600 bg-zinc-800 text-white'
+                          : 'border-zinc-800 hover:border-zinc-700 text-zinc-300'
                       }`}
                     >
                       <type.icon className="h-4 w-4 mx-auto mb-1" />
@@ -77,11 +89,11 @@ export default function ContentPage() {
 
               {/* Tone */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tone</label>
+                <label className="block text-sm font-medium text-white mb-2">Tone</label>
                 <select
                   value={tone}
                   onChange={(e) => setTone(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-zinc-800 bg-black text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   {tones.map((t) => (
                     <option key={t.id} value={t.id}>{t.name}</option>
@@ -91,14 +103,14 @@ export default function ContentPage() {
 
               {/* Prompt */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-white mb-2">
                   What would you like to tweet about?
                 </label>
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="e.g., AI trends in 2024, productivity tips, latest project update..."
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="w-full p-3 border border-zinc-800 bg-black text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none placeholder:text-zinc-600"
                   rows={4}
                 />
               </div>
@@ -123,8 +135,8 @@ export default function ContentPage() {
             </div>
 
             {/* Quick Templates */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Templates</h3>
+            <div className="x-card p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-white mb-4">Quick Templates</h3>
               <div className="space-y-2">
                 {[
                   'Share a productivity tip',
@@ -136,7 +148,7 @@ export default function ContentPage() {
                   <button
                     key={template}
                     onClick={() => setPrompt(template)}
-                    className="w-full text-left p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                    className="w-full text-left p-3 text-sm text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors"
                   >
                     {template}
                   </button>
@@ -147,22 +159,22 @@ export default function ContentPage() {
 
           {/* Output Section */}
           <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Generated Content</h2>
+            <div className="x-card p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-white mb-4">Generated Content</h2>
               
               {generatedContent ? (
                 <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-500">
-                    <p className="text-gray-900 whitespace-pre-wrap">{generatedContent}</p>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
-                      <span className="text-sm text-gray-500">
+                  <div className="bg-zinc-900 rounded-lg p-4 border-l-4 border-blue-500">
+                    <p className="text-white whitespace-pre-wrap">{generatedContent}</p>
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t x-divider">
+                      <span className="text-sm x-muted">
                         {generatedContent.length}/280 characters
                       </span>
                       <div className="flex space-x-2">
-                        <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                        <button className="text-sm x-accent font-medium">
                           Edit
                         </button>
-                        <button className="text-sm text-green-600 hover:text-green-700 font-medium">
+                        <button className="text-sm text-green-400 hover:text-green-300 font-medium">
                           Regenerate
                         </button>
                       </div>
@@ -170,11 +182,11 @@ export default function ContentPage() {
                   </div>
 
                   <div className="flex space-x-3">
-                    <button className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center">
+                    <button onClick={handlePost} className="flex-1 x-btn py-2 px-4 font-medium transition-colors flex items-center justify-center">
                       <Send className="h-4 w-4 mr-2" />
                       Post Now
                     </button>
-                    <button className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center">
+                    <button className="flex-1 bg-zinc-800 text-zinc-200 py-2 px-4 rounded-lg font-medium hover:bg-zinc-700 transition-colors flex items-center justify-center border border-zinc-700">
                       <Calendar className="h-4 w-4 mr-2" />
                       Schedule
                     </button>
@@ -182,24 +194,24 @@ export default function ContentPage() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <PenTool className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">Enter a prompt and click generate to create content</p>
+                  <PenTool className="h-12 w-12 text-zinc-600 mx-auto mb-4" />
+                  <p className="x-muted">Enter a prompt and click generate to create content</p>
                 </div>
               )}
             </div>
 
             {/* Recent Generations */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Generations</h3>
+            <div className="x-card p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-white mb-4">Recent Generations</h3>
               <div className="space-y-3">
                 {[
                   'AI is revolutionizing how we create content...',
                   'Just shipped a new feature that will change...',
                   'What are your favorite productivity tools?...'
                 ].map((content, index) => (
-                  <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-700 truncate">{content}</p>
-                    <span className="text-xs text-gray-500">2 hours ago</span>
+                  <div key={index} className="p-3 bg-zinc-900 rounded-lg">
+                  <p className="text-sm text-zinc-200 truncate">{content}</p>
+                  <span className="text-xs x-muted">2 hours ago</span>
                   </div>
                 ))}
               </div>

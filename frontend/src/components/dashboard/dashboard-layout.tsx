@@ -35,18 +35,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-black">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white shadow-xl">
-          <div className="flex h-16 items-center justify-between px-4 border-b border-gray-200">
+        <div className="fixed inset-0 bg-black/70" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-zinc-900 border-r border-zinc-800">
+          <div className="flex h-16 items-center justify-between px-4 border-b border-zinc-800">
             <div className="flex items-center space-x-3">
-              <Bot className="h-8 w-8 text-blue-600" />
-              <span className="text-lg font-bold text-gray-900">LazAI</span>
+              <Bot className="h-8 w-8 text-white" />
+              <span className="text-lg font-bold text-white">LazAI 𝕏</span>
             </div>
             <button onClick={() => setSidebarOpen(false)}>
-              <X className="h-6 w-6 text-gray-400" />
+              <X className="h-6 w-6 text-zinc-400" />
             </button>
           </div>
           <nav className="flex-1 px-4 py-4 space-y-1">
@@ -56,8 +56,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 href={item.href}
                 className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   item.current
-                    ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-zinc-800 text-white border-r-2 border-white'
+                    : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
                 }`}
               >
                 <item.icon className="mr-3 h-5 w-5" />
@@ -70,11 +70,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-white border-r border-gray-200 shadow-sm">
-          <div className="flex h-16 items-center px-4 border-b border-gray-200">
+        <div className="flex flex-col flex-grow bg-black border-r border-zinc-800">
+          <div className="flex h-16 items-center px-4 border-b border-zinc-800">
             <div className="flex items-center space-x-3">
-              <Bot className="h-8 w-8 text-blue-600" />
-              <span className="text-lg font-bold text-gray-900">LazAI Dashboard</span>
+              <Bot className="h-8 w-8 text-white" />
+              <span className="text-lg font-bold text-white">LazAI 𝕏</span>
             </div>
           </div>
           
@@ -85,8 +85,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 href={item.href}
                 className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                   item.current
-                    ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-zinc-800 text-white border-r-2 border-white'
+                    : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
                 }`}
               >
                 <item.icon className="mr-3 h-5 w-5" />
@@ -96,7 +96,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </nav>
 
           {/* User section */}
-          <div className="border-t border-gray-200 p-4">
+          <div className="border-t border-zinc-800 p-4">
             <div className="flex items-center space-x-3 mb-3">
               <div className="flex-shrink-0">
                 {session?.user?.image ? (
@@ -106,23 +106,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     alt={session?.user?.name || 'User'}
                   />
                 ) : (
-                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                    <User className="h-4 w-4 text-blue-600" />
+                  <div className="h-8 w-8 rounded-full bg-zinc-800 flex items-center justify-center">
+                    <User className="h-4 w-4 text-zinc-400" />
                   </div>
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-white truncate">
                   {session?.user?.name || 'User'}
                 </p>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="text-xs text-zinc-400 truncate">
                   @{session?.user?.name?.toLowerCase().replace(/\s+/g, '') || 'username'}
                 </p>
               </div>
             </div>
             <button
               onClick={() => signOut()}
-              className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              className="w-full flex items-center px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors"
             >
               <LogOut className="mr-3 h-4 w-4" />
               Sign out
@@ -134,31 +134,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+        <div className="sticky top-0 z-40 bg-black/90 border-b border-zinc-800">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 text-gray-400 hover:text-gray-600"
+              className="lg:hidden p-2 text-zinc-400 hover:text-white"
             >
               <Menu className="h-6 w-6" />
             </button>
             
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <Twitter className="h-4 w-4 text-blue-500" />
+              <div className="flex items-center space-x-2 text-sm text-zinc-400">
+                <Twitter className="h-4 w-4 text-blue-400" />
                 <span>Connected as @{session?.user?.name?.toLowerCase().replace(/\s+/g, '') || 'username'}</span>
               </div>
               
-              <button className="p-2 text-gray-400 hover:text-gray-600 relative">
+              <button className="p-2 text-zinc-400 hover:text-white relative">
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                <span className="absolute top-1 right-1 h-2 w-2 bg-blue-400 rounded-full"></span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Page content */}
-        <main className="flex-1">
+        <main className="flex-1 bg-black min-h-screen">
           {children}
         </main>
       </div>
